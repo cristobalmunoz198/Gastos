@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gastos">
+<meta name="theme-color" content="#0b3d2e">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Gastos</title>
+<style>
+:root{
+  --bg:#f2f2f7; --card:#ffffff; --tx:#1c1c1e; --mut:#8e8e93; --bd:#e5e5ea;
+  --ac:#14805e; --ac-soft:#e3f3ec; --ok:#248a3d; --err:#d70015; --chip:#f2f2f7;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#000; --card:#1c1c1e; --tx:#f2f2f7; --mut:#98989d; --bd:#2c2c2e;
+         --ac:#30c48d; --ac-soft:#12352a; --ok:#30d158; --err:#ff453a; --chip:#2c2c2e; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,system-ui,sans-serif}
+body{padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 96px);max-width:560px;margin:auto;-webkit-user-select:none;user-select:none}
+input,select{-webkit-user-select:text;user-select:text}
+.hidden{display:none!important}
+
+header{display:flex;align-items:center;justify-content:space-between;margin:8px 4px 16px}
+h1{font-size:32px;margin:0;letter-spacing:-.5px}
+.icon-btn{border:0;background:var(--card);color:var(--ac);width:40px;height:40px;border-radius:20px;font-size:20px;display:grid;place-items:center}
+
+.card{background:var(--card);border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.lbl{font-size:13px;color:var(--mut);margin:0 0 8px;text-transform:uppercase;letter-spacing:.4px}
+
+/* Monto */
+.amount{font-size:44px;font-weight:700;border:0;background:transparent;color:var(--tx);width:100%;outline:none;padding:0;letter-spacing:-1px;font-family:inherit}
+.amount::placeholder{color:var(--mut)}
+.quick{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+.quick button{flex:0 0 auto;border:0;background:var(--chip);color:var(--tx);border-radius:10px;padding:8px 12px;font-size:15px;font-family:inherit}
+
+/* Chips */
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.chips.scroll::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:0;background:var(--chip);color:var(--tx);border-radius:999px;padding:9px 14px;font-size:15px;font-family:inherit}
+.chip.on{background:var(--ac);color:#fff;font-weight:600}
+
+/* Fecha */
+.row{display:flex;align-items:center;gap:12px}
+.row select{flex:1;font-size:17px;border:0;background:var(--chip);color:var(--tx);border-radius:10px;padding:10px 12px;font-family:inherit;-webkit-appearance:none;appearance:none}
+.stepper{display:flex;align-items:center;background:var(--chip);border-radius:10px}
+.stepper button{border:0;background:transparent;color:var(--ac);font-size:22px;width:40px;height:42px;font-family:inherit}
+.stepper input{width:44px;text-align:center;border:0;background:transparent;color:var(--tx);font-size:17px;font-weight:600;font-family:inherit;outline:none}
+
+.text{width:100%;font-size:17px;border:0;background:transparent;color:var(--tx);outline:none;padding:2px 0;font-family:inherit}
+
+/* Botón guardar fijo */
+.bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(env(safe-area-inset-bottom) + 12px);background:linear-gradient(to top,var(--bg) 70%,transparent)}
+.bar button{display:block;width:100%;max-width:528px;margin:auto;border:0;border-radius:14px;padding:17px;font-size:17px;font-weight:600;background:var(--ac);color:#fff;font-family:inherit}
+.bar button:disabled{opacity:.5}
+.summary{text-align:center;font-size:13px;color:var(--mut);margin:0 0 8px;min-height:16px}
+
+/* Toast */
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translate(-50%,-150%);transition:transform .3s;background:var(--card);color:var(--tx);padding:12px 18px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);font-size:15px;max-width:92vw;z-index:10}
+.toast.show{transform:translate(-50%,0)}
+.toast.err{color:var(--err)}
+
+/* Configuración */
+.setup p{color:var(--mut);font-size:15px;line-height:1.4;margin:0 4px 16px}
+.field{display:block;padding:10px 0;border-bottom:1px solid var(--bd)}
+.field:last-child{border-bottom:0}
+.field span{display:block;font-size:13px;color:var(--mut);margin-bottom:4px}
+.link{display:block;width:100%;border:0;background:var(--card);color:var(--ac);border-radius:14px;padding:15px;font-size:17px;margin-bottom:12px;font-family:inherit}
+.link.danger{color:var(--err)}
+.loading{text-align:center;color:var(--mut);padding:40px 0}
+</style>
+</head>
+<body>
+
+<!-- Pantalla: configuración -->
+<section id="vSetup" class="setup hidden">
+  <header><h1>Conectar</h1></header>
+  <p>Pega la URL de tu script (termina en <b>/exec</b>) y tu clave. Solo tienes que hacerlo una vez.</p>
+  <div class="card">
+    <label class="field"><span>URL del script</span><input id="inUrl" class="text" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+    <label class="field"><span>Clave</span><input id="inTok" class="text" type="password" placeholder="Tu clave" autocapitalize="off" autocorrect="off"></label>
+  </div>
+  <div class="bar"><button id="btnConnect">Conectar</button></div>
+</section>
+
+<!-- Pantalla: ajustes -->
+<section id="vSettings" class="hidden">
+  <header><h1>Ajustes</h1><button class="icon-btn" id="btnBack" aria-label="Volver">✕</button></header>
+  <button class="link" id="btnReload">Actualizar meses y categorías</button>
+  <button class="link danger" id="btnReset">Cambiar conexión</button>
+</section>
+
+<!-- Pantalla: registro -->
+<section id="vMain" class="hidden">
+  <header><h1>Gastos</h1><button class="icon-btn" id="btnSettings" aria-label="Ajustes">⚙︎</button></header>
+
+  <div id="loading" class="loading">Cargando…</div>
+
+  <div id="form" class="hidden">
+    <div class="card">
+      <p class="lbl">Monto</p>
+      <input id="monto" class="amount" inputmode="numeric" placeholder="$0" autocomplete="off">
+      <div class="quick" id="quick"></div>
+    </div>
+
+    <div class="card">
+      <p class="lbl">Tipo</p>
+      <div class="chips scroll" id="secs"></div>
+    </div>
+
+    <div class="card">
+      <p class="lbl">Categoría</p>
+      <div class="chips" id="items"></div>
+    </div>
+
+    <div class="card">
+      <p class="lbl">Fecha</p>
+      <div class="row">
+        <select id="mes"></select>
+        <div class="stepper">
+          <button id="dMenos" aria-label="Día anterior">−</button>
+          <input id="dia" inputmode="numeric" maxlength="2">
+          <button id="dMas" aria-label="Día siguiente">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="lbl">Nota</p>
+      <input id="nota" class="text" placeholder="Opcional" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="bar">
+    <p class="summary" id="summary"></p>
+    <button id="btnSave" disabled>Guardar</button>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  /* ---------- Almacenamiento local (con protección) ---------- */
+  var LS = {
+    get: function(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    set: function(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+    del: function(k){ try { localStorage.removeItem(k); } catch(e){} }
+  };
+
+  var cfg = { url: LS.get('g_url') || '', token: LS.get('g_token') || '' };
+  var menu = null;
+  try { menu = JSON.parse(LS.get('g_menu') || 'null'); } catch(e){}
+  var st = { sec: LS.get('g_sec') || '', item: '' };
+
+  function $(id){ return document.getElementById(id); }
+  function show(v){ ['vSetup','vSettings','vMain'].forEach(function(x){ $(x).classList.toggle('hidden', x !== v); }); }
+
+  var toastTimer;
+  function toast(msg, err){
+    var t = $('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.className = 'toast' + (err ? ' err' : ''); }, 2800);
+  }
+
+  /* ---------- Comunicación con Apps Script ---------- */
+  function apiGet(url, token){
+    return fetch(url + '?formato=json&token=' + encodeURIComponent(token))
+      .then(function(r){ return r.text(); })
+      .then(parse);
+  }
+  function apiPost(body){
+    body.token = cfg.token;
+    return fetch(cfg.url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+      .then(function(r){ return r.text(); })
+      .then(parse);
+  }
+  function parse(txt){
+    try { return JSON.parse(txt); }
+    catch(e){ throw new Error('No pude conectar. Revisa la URL y que el acceso sea "Cualquier usuario".'); }
+  }
+
+  /* ---------- Formato de montos ---------- */
+  function digits(s){ return String(s).replace(/\D/g,''); }
+  function money(n){ return '$' + Number(n).toLocaleString('es-CL'); }
+
+  /* ---------- Render ---------- */
+  var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  function render(){
+    if (!menu || !menu.secciones) return;
+    $('loading').classList.add('hidden');
+    $('form').classList.remove('hidden');
+
+    // Mes
+    var prevMes = $('mes').value;
+    $('mes').innerHTML = '';
+    menu.meses.forEach(function(m){ $('mes').add(new Option(m, m)); });
+    if (prevMes && menu.meses.indexOf(prevMes) > -1) $('mes').value = prevMes;
+    else {
+      var nm = MESES[new Date().getMonth()];
+      var i = menu.meses.findIndex(function(m){ var l = m.toLowerCase(); return l.indexOf(nm) > -1 || l.indexOf(nm.slice(0,3)) > -1; });
+      $('mes').selectedIndex = i > -1 ? i : 0;
+    }
+    if (!$('dia').value) $('dia').value = new Date().getDate();
+
+    // Tipo
+    if (menu.secciones.indexOf(st.sec) < 0) {
+      st.sec = menu.secciones.find(function(s){ return /comida/i.test(s); }) || menu.secciones[0];
+    }
+    $('secs').innerHTML = '';
+    menu.secciones.forEach(function(s){
+      var b = document.createElement('button');
+      b.className = 'chip' + (s === st.sec ? ' on' : '');
+      b.textContent = s;
+      b.onclick = function(){ st.sec = s; st.item = ''; LS.set('g_sec', s); render(); };
+      $('secs').appendChild(b);
+      if (s === st.sec) setTimeout(function(){ b.scrollIntoView({ inline:'center', block:'nearest' }); }, 0);
+    });
+
+    // Categoría
+    var its = menu.items[st.sec] || [];
+    if (its.indexOf(st.item) < 0) st.item = '';
+    $('items').innerHTML = '';
+    its.forEach(function(it){
+      var b = document.createElement('button');
+      b.className = 'chip' + (it === st.item ? ' on' : '');
+      b.textContent = it;
+      b.onclick = function(){ st.item = it; render(); };
+      $('items').appendChild(b);
+    });
+
+    updateBar();
+  }
+
+  function updateBar(){
+    var m = digits($('monto').value);
+    var ok = m && st.sec && st.item && $('mes').value && $('dia').value;
+    $('btnSave').disabled = !ok;
+    $('summary').textContent = st.item ? (st.item + ' · ' + st.sec + ' · ' + $('dia').value + ' ' + $('mes').value) : 'Elige una categoría';
+  }
+
+  /* ---------- Carga del menú ---------- */
+  function loadMenu(silent){
+    return apiGet(cfg.url, cfg.token).then(function(r){
+      if (!r.ok) throw new Error(r.msg || 'Error al cargar');
+      menu = { meses: r.meses, secciones: r.secciones, items: r.items };
+      LS.set('g_menu', JSON.stringify(menu));
+      render();
+      if (!silent) toast('Categorías actualizadas');
+    }).catch(function(e){
+      if (!menu) { $('loading').textContent = e.message; }
+      else if (!silent) toast(e.message, true);
+    });
+  }
+
+  /* ---------- Eventos ---------- */
+  $('monto').addEventListener('input', function(e){
+    var d = digits(e.target.value);
+    e.target.value = d ? money(d) : '';
+    updateBar();
+  });
+
+  [1000, 2000, 5000, 10000, 20000].forEach(function(v){
+    var b = document.createElement('button');
+    b.textContent = '+' + money(v);
+    b.onclick = function(){ var cur = Number(digits($('monto').value) || 0); $('monto').value = money(cur + v); updateBar(); };
+    $('quick').appendChild(b);
+  });
+
+  function setDia(n){ n = Math.max(1, Math.min(31, n)); $('dia').value = n; updateBar(); }
+  $('dMenos').onclick = function(){ setDia(Number($('dia').value || 1) - 1); };
+  $('dMas').onclick = function(){ setDia(Number($('dia').value || 1) + 1); };
+  $('dia').addEventListener('input', function(e){ var d = digits(e.target.value).slice(0,2); e.target.value = d; updateBar(); });
+  $('dia').addEventListener('blur', function(){ if ($('dia').value) setDia(Number($('dia').value)); });
+  $('mes').onchange = updateBar;
+
+  $('btnSave').onclick = function(){
+    var btn = $('btnSave');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    apiPost({
+      mes: $('mes').value, dia: $('dia').value, seccion: st.sec, item: st.item,
+      monto: digits($('monto').value), nota: $('nota').value.trim()
+    }).then(function(r){
+      toast(r.msg || (r.ok ? 'Guardado' : 'Error'), !r.ok);
+      if (r.ok) { $('monto').value = ''; $('nota').value = ''; st.item = ''; render(); }
+    }).catch(function(e){ toast(e.message, true); })
+      .then(function(){ btn.textContent = 'Guardar'; updateBar(); });
+  };
+
+  $('btnSettings').onclick = function(){ show('vSettings'); };
+  $('btnBack').onclick = function(){ show('vMain'); };
+  $('btnReload').onclick = function(){ show('vMain'); loadMenu(false); };
+  $('btnReset').onclick = function(){
+    ['g_url','g_token','g_menu','g_sec'].forEach(LS.del);
+    cfg = { url:'', token:'' }; menu = null;
+    $('inUrl').value = ''; $('inTok').value = '';
+    show('vSetup');
+  };
+
+  $('btnConnect').onclick = function(){
+    var url = $('inUrl').value.trim().split('?')[0];
+    var tok = $('inTok').value.trim();
+    if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(url)) { toast('La URL debe terminar en /exec', true); return; }
+    if (!tok) { toast('Ingresa tu clave', true); return; }
+    var btn = $('btnConnect'); btn.disabled = true; btn.textContent = 'Conectando…';
+    apiGet(url, tok).then(function(r){
+      if (!r.ok) throw new Error(r.msg || 'No se pudo conectar');
+      cfg = { url: url, token: tok };
+      LS.set('g_url', url); LS.set('g_token', tok);
+      menu = { meses: r.meses, secciones: r.secciones, items: r.items };
+      LS.set('g_menu', JSON.stringify(menu));
+      show('vMain'); render(); toast('¡Conectado!');
+    }).catch(function(e){ toast(e.message, true); })
+      .then(function(){ btn.disabled = false; btn.textContent = 'Conectar'; });
+  };
+
+  /* ---------- Inicio ---------- */
+  if (!cfg.url || !cfg.token) { show('vSetup'); }
+  else { show('vMain'); render(); loadMenu(true); }
+})();
+</script>
+</body>
+</html>
