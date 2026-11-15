@@ -1,0 +1,7 @@
+{
+  "name": "gastos",
+  "private": true,
+  "scripts": {
+    "test": "TZ=America/Santiago node --test tests/*.test.js"
+  }
+}

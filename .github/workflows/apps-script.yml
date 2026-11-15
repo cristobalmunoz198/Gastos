@@ -1,0 +1,59 @@
+# Publica el Apps Script automáticamente cada vez que cambia la carpeta apps-script/ en main.
+# Requiere 3 secretos en el repo (Settings → Secrets and variables → Actions):
+#   CLASPRC_JSON   contenido de ~/.clasprc.json (sesión de clasp con cristobal.munoz198@gmail.com)
+#   SCRIPT_ID      ID de la secuencia de comandos (Apps Script → Configuración del proyecto)
+#   DEPLOYMENT_ID  ID de la implementación web (lo que va entre /s/ y /exec en la URL)
+# Ver docs/AUTOMATICO.md
+
+name: Publicar Apps Script
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps-script/**'
+      - '.github/workflows/apps-script.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: apps-script
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Pruebas (si fallan, no se publica nada)
+        run: npm test
+
+      - name: Revisar configuración
+        id: config
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+          DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ] || [ -z "$SCRIPT_ID" ] || [ -z "$DEPLOYMENT_ID" ]; then
+            echo "::notice::Falta configurar los secretos (ver docs/AUTOMATICO.md). No se publicó nada."
+            echo "listo=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "$CLASPRC_JSON" > ~/.clasprc.json
+            printf '{"scriptId":"%s","rootDir":"apps-script"}' "$SCRIPT_ID" > .clasp.json
+            echo "listo=si" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Subir el código a Apps Script
+        if: steps.config.outputs.listo == 'si'
+        run: npx -y @google/clasp@2.4.2 push --force
+
+      - name: Publicar nueva versión (la URL /exec no cambia)
+        if: steps.config.outputs.listo == 'si'
+        env:
+          DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+        run: npx -y @google/clasp@2.4.2 deploy --deploymentId "$DEPLOYMENT_ID" --description "Auto ${GITHUB_SHA::7}"
