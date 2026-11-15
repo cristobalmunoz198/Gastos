@@ -23,6 +23,7 @@
   const fechaTxt = d => d.getFullYear() + '-' + dos(d.getMonth() + 1) + '-' + dos(d.getDate());
   const aFecha = s => new Date(Number(s.slice(0, 4)), Number(s.slice(5, 7)) - 1, Number(s.slice(8, 10)));   // local, no UTC
   const claseUso = pct => pct > 100 ? 'over' : pct >= 85 ? 'warn' : '';
+  const VERSION = '2026-11-14.3';
   const nuevoId = () => 'c' + Math.random().toString(36).slice(2, 9).padEnd(7, '0');
 
   let toastT;
@@ -211,7 +212,11 @@
     if (actual === 'agregar') return;
     if (alEntrar[actual]) alEntrar[actual]();
   }
-  document.querySelectorAll('.nav button').forEach(b => { b.onclick = () => irA(b.dataset.s); });
+  // Cambia apenas apoyas el dedo (pointerdown), sin esperar a que lo levantes
+  document.querySelectorAll('.nav button').forEach(b => {
+    b.addEventListener('pointerdown', () => { if (actual !== b.dataset.s || b.dataset.s === 'ajustes') irA(b.dataset.s); });
+    b.addEventListener('click', () => { if (actual !== b.dataset.s) irA(b.dataset.s); });
+  });
 
   /* ───────── Conectar ───────── */
   function conectar(url, token, boton, textoBoton, desdeAjustes) {
@@ -494,6 +499,7 @@
 
   function abrirAjuste(cual) {
     ajuste = cual;
+    $('version').textContent = 'Versión ' + VERSION;
     $('ajMenu').classList.toggle('hidden', !!cual);
     $('ajVolver').classList.toggle('hidden', !cual);
     $('ajTitulo').textContent = cual ? TITULOS_AJ[cual] : 'Ajustes';
@@ -562,18 +568,31 @@
     const caja = $('aj-presupuesto'), d = datos();
     if (!d) { caja.innerHTML = '<div class="cargando">Cargando…</div>'; return; }
     const ref = { anio: st.anio, mes: st.mes };
+    // Lo gastado el mes anterior, para presupuestar mirando lo real
+    const ant = ref.mes === 1 ? { anio: ref.anio - 1, mes: 12 } : { anio: ref.anio, mes: ref.mes - 1 };
+    if (!datos(ant.anio) && !cargarLocal(ant.anio)) {
+      caja.innerHTML = '<div class="cargando">Cargando…</div>';
+      asegurarAnio(ant.anio).then(() => { if (ajuste === 'presupuesto') { if (!datos(ant.anio)) st.datos[ant.anio] = { anio: ant.anio, categorias: d.categorias, movimientos: [], presupuestos: {}, colchonDefault: d.colchonDefault }; pintarPresupuesto(); } });
+      return;
+    }
+    const realAnt = realPorCategoria_(movsCalc(datos(ant.anio)), ant.anio, ant.mes);
+    const mesAnt = MESES[ant.mes - 1].slice(0, 3).toLowerCase();
+    const etiqAnt = v => mesAnt + ' ' + (v ? pesos(v) : '—');
     const pres = (d.presupuestos || {})[ref.mes] || {};
     const items = Object.assign({}, pres); delete items._colchon;
     const colchon = pres._colchon !== undefined ? pres._colchon : d.colchonDefault;
     const cats = d.categorias.filter(c => c.activa || items[c.id]);
     const ingresos = cats.filter(c => c.tipo === 'ingreso'), gastos = cats.filter(c => GASTO.indexOf(c.tipo) > -1);
-    const input = c => '<div class="it-t it"><span>' + esc(c.nombre) + '</span><input class="pres-in" data-id="' + esc(c.id) + '" inputmode="numeric" placeholder="sin tope" value="' + (items[c.id] ? pesos(items[c.id]) : '') + '"></div>';
+    const input = c => '<div class="it-t it pres-fila"><span>' + esc(c.nombre) + '</span><span class="pres-der"><small class="pres-ant" data-id="' + esc(c.id) + '">' + etiqAnt(realAnt[c.id] || 0) + '</small>' +
+      '<input class="pres-in" data-id="' + esc(c.id) + '" inputmode="numeric" placeholder="sin tope" value="' + (items[c.id] ? pesos(items[c.id]) : '') + '"></span></div>';
+    const totalAnt = cs => cs.reduce((a, c) => a + (realAnt[c.id] || 0), 0);
     caja.innerHTML =
       '<p class="mut peq" style="margin:0 4px 10px">' + MESES[ref.mes - 1] + ' ' + ref.anio + ' · cambia el mes en Inicio</p>' +
       '<button class="btn-sec" id="pCopiar" style="width:100%;margin-bottom:14px">Copiar del mes anterior</button>' +
-      '<div class="card"><p class="lbl">Ingresos esperados</p>' + ingresos.map(input).join('') +
+      '<div class="card"><p class="lbl pres-sec" data-sec="Ingresos">Ingresos esperados <span class="pres-ant-sec">' + etiqAnt(totalAnt(ingresos)) + '</span></p>' + ingresos.map(input).join('') +
       '<div class="it-t it"><span>Colchón</span><input class="pres-in" id="pColchon" inputmode="numeric" value="' + pesos(colchon) + '"></div></div>' +
-      seccionesDe(gastos).map(s => '<div class="card"><p class="lbl">' + esc(s) + '</p>' + gastos.filter(c => c.seccion === s).map(input).join('') + '</div>').join('') +
+      seccionesDe(gastos).map(s => { const cs = gastos.filter(c => c.seccion === s);
+        return '<div class="card"><p class="lbl pres-sec" data-sec="' + esc(s) + '">' + esc(s) + ' <span class="pres-ant-sec">' + etiqAnt(totalAnt(cs)) + '</span></p>' + cs.map(input).join('') + '</div>'; }).join('') +
       '<div class="card total"><span>Total a depositar</span><span id="pTotal"></span></div>' +
       '<button class="btn-pri" id="pGuardar">Guardar presupuesto</button>';
     const recalcular = () => {

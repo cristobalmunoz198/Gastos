@@ -432,6 +432,41 @@ def sin_internet_abre_igual(b):
     finally:
         srv.shutdown()
 
+# ───────── Fluidez y presupuesto con mes anterior ─────────
+
+@prueba
+def pestana_cambia_al_apoyar_el_dedo(b):
+    pg = abrir(b)
+    pg.evaluate("""document.querySelector('.nav [data-s="historial"]').dispatchEvent(new PointerEvent('pointerdown', {bubbles: true}))""")
+    assert pg.is_visible('#s-historial'), 'debe cambiar en pointerdown, sin esperar el click'
+    return pg
+
+@prueba
+def ajustes_muestra_version(b):
+    pg = abrir(b)
+    nav(pg, 'ajustes')
+    v = pg.inner_text('#version')
+    assert v.startswith('Versión ') and len(v) > 9, v
+    return pg
+
+@prueba
+def presupuesto_muestra_lo_gastado_el_mes_anterior(b):
+    pg = abrir(b)
+    ajuste(pg, 'presupuesto')
+    assert pg.inner_text('.pres-ant[data-id="sup"]') == 'oct $99.000', pg.inner_text('.pres-ant[data-id="sup"]')
+    assert pg.inner_text('.pres-ant[data-id="luz"]') == 'oct —'
+    assert 'oct $99.000' in pg.inner_text('.pres-sec[data-sec="Comida"]'), pg.inner_text('.pres-sec[data-sec="Comida"]')
+    pg.screenshot(path=os.path.join(CAPT, 'presupuesto-anterior.png'), full_page=True)
+    return pg
+
+@prueba
+def presupuesto_enero_mira_diciembre_del_anio_anterior(b):
+    pg = abrir(b)
+    pg.select_option('#iAnio', '2027'); pg.select_option('#iMes', '1'); pg.wait_for_timeout(300)
+    ajuste(pg, 'presupuesto'); pg.wait_for_timeout(300)
+    assert pg.inner_text('.pres-ant[data-id="sup"]') == 'dic —', pg.inner_text('.pres-ant[data-id="sup"]')
+    return pg
+
 def main():
     filtro = sys.argv[1] if len(sys.argv) > 1 else ''
     fallas = 0

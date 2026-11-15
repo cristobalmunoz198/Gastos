@@ -134,3 +134,11 @@ h1{font-size:30px;margin:0;letter-spacing:-.5px}
 .cats-chk label{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:16px}
 .cats-chk input{width:20px;height:20px;accent-color:var(--ac)}
 .link-suave{border:0;background:transparent;color:var(--ac);font-size:15px;padding:4px 0}
+
+/* Presupuesto: lo gastado el mes anterior, en chico a la izquierda del monto */
+.pres-fila{align-items:center}
+.pres-der{display:flex;align-items:center;gap:8px}
+.pres-ant{font-size:11px;color:var(--mut);white-space:nowrap}
+.pres-ant-sec{float:right;text-transform:none;letter-spacing:0;font-size:12px}
+/* Respuesta visual inmediata al tocar */
+.nav button:active,.sobre:active,.mov:active,.link:active,.chip:active{opacity:.6}

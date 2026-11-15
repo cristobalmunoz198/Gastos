@@ -3,7 +3,7 @@
  * (la próxima vez que abras ya verás la actualización).
  * Las llamadas a Google (script.google.com) NO pasan por aquí: siempre van a la red.
  */
-const CACHE = 'gastos-v1';
+const CACHE = 'gastos-v2';
 const ARCHIVOS = ['./', 'index.html', 'app.css', 'app.js', 'calculos.js', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -23,7 +23,7 @@ self.addEventListener('fetch', e => {
   const clave = req.mode === 'navigate' ? 'index.html' : req;
   e.respondWith(caches.open(CACHE).then(cache =>
     cache.match(clave, { ignoreSearch: true }).then(guardado => {
-      const red = fetch(req).then(resp => {
+      const red = fetch(req, { cache: 'no-cache' }).then(resp => {   // no usar la copia de 10 min de GitHub
         if (resp && resp.ok) cache.put(clave, resp.clone());
         return resp;
       }).catch(() => guardado);
