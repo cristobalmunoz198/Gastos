@@ -43,7 +43,20 @@ jobs:
             echo "::notice::Falta configurar los secretos (ver docs/AUTOMATICO.md). No se publicó nada."
             echo "listo=no" >> "$GITHUB_OUTPUT"
           else
-            echo "$CLASPRC_JSON" > ~/.clasprc.json
+            printf '%s' "$CLASPRC_JSON" > ~/.clasprc.json
+            # Revisa la llave sin mostrar su contenido
+            node -e '
+              const fs = require("fs"), os = require("os");
+              const txt = fs.readFileSync(os.homedir() + "/.clasprc.json", "utf8").trim();
+              let j;
+              try { j = JSON.parse(txt); } catch (e) {
+                console.log("::error::CLASPRC_JSON no es un JSON válido (largo " + txt.length + ", empieza con \"" + txt.slice(0, 2) + "\", termina con \"" + txt.slice(-2) + "\"). Copia el texto completo, desde { hasta }.");
+                process.exit(1);
+              }
+              const t = j.token || (j.tokens && j.tokens.default) || {};
+              console.log("Llave: claves=" + Object.keys(j).join(",") + " | refresh_token=" + (t.refresh_token ? "sí" : "NO"));
+              if (!t.refresh_token) { console.log("::error::La llave no trae refresh_token. Repite el paso 4 (login) y copia de nuevo."); process.exit(1); }
+            '
             printf '{"scriptId":"%s","rootDir":"apps-script"}' "$SCRIPT_ID" > .clasp.json
             echo "listo=si" >> "$GITHUB_OUTPUT"
           fi
