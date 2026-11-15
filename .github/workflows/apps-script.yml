@@ -47,7 +47,10 @@ jobs:
             # Revisa la llave sin mostrar su contenido
             node -e '
               const fs = require("fs"), os = require("os");
-              const txt = fs.readFileSync(os.homedir() + "/.clasprc.json", "utf8").trim();
+              const ruta = os.homedir() + "/.clasprc.json";
+              // Al copiar desde la terminal se cuelan saltos de línea: la llave real es una sola línea
+              const txt = fs.readFileSync(ruta, "utf8").replace(/[\r\n]+/g, "").trim();
+              fs.writeFileSync(ruta, txt);
               let j;
               try { j = JSON.parse(txt); } catch (e) {
                 console.log("::error::CLASPRC_JSON no es un JSON válido (largo " + txt.length + ", empieza con \"" + txt.slice(0, 2) + "\", termina con \"" + txt.slice(-2) + "\"). Copia el texto completo, desde { hasta }.");
