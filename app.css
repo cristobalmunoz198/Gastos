@@ -120,3 +120,17 @@ h1{font-size:30px;margin:0;letter-spacing:-.5px}
 
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);transform:translate(-50%,-160%);transition:transform .3s;background:var(--card);color:var(--tx);padding:12px 18px;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.18);font-size:15px;max-width:92vw;z-index:30}
 .toast.show{transform:translate(-50%,0)} .toast.err{color:var(--err)}
+.sync{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 64px);background:var(--tx);color:var(--bg);font-size:12px;font-weight:600;border-radius:12px;padding:5px 11px;z-index:15;opacity:.85}
+
+/* Tendencias y metas */
+.tend{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:9px 0;border-top:1px solid var(--bd);font-size:15px}
+.tend:first-of-type{border-top:0}
+.tend small{display:block;color:var(--mut);font-size:12px}
+.sube{color:var(--err);font-weight:700} .baja{color:var(--ok);font-weight:700}
+.proy{font-size:14px;color:var(--mut);margin:0 0 6px;line-height:1.45} .proy b{color:var(--tx)}
+.meta-it{padding:10px 0;border-top:1px solid var(--bd)} .meta-it:first-of-type{border-top:0}
+.meta-it .barra{height:8px}
+.meta-row{display:block;width:100%;border:0;background:var(--card);color:var(--tx);border-radius:14px;padding:14px 16px;margin-bottom:10px;text-align:left}
+.cats-chk label{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:16px}
+.cats-chk input{width:20px;height:20px;accent-color:var(--ac)}
+.link-suave{border:0;background:transparent;color:var(--ac);font-size:15px;padding:4px 0}

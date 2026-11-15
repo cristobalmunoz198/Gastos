@@ -55,6 +55,8 @@
       </div>
       <div id="sobres" class="sobres"></div>
       <div id="sobreDetalle" class="card hidden"></div>
+      <div id="tendencias" class="card hidden"></div>
+      <div id="metas" class="card"></div>
     </div>
   </section>
 
@@ -99,10 +101,12 @@
     <header><h1 id="ajTitulo">Ajustes</h1><button class="icono hidden" id="ajVolver" aria-label="Volver">‹</button></header>
     <div id="ajMenu">
       <button class="link" data-aj="presupuesto">Presupuesto del mes <span>›</span></button>
+      <button class="link" data-aj="metas">Metas de ahorro <span>›</span></button>
       <button class="link" data-aj="categorias">Categorías <span>›</span></button>
       <button class="link" data-aj="conexion">Conexión <span>›</span></button>
     </div>
     <div id="aj-presupuesto" class="hidden"></div>
+    <div id="aj-metas" class="hidden"></div>
     <div id="aj-categorias" class="hidden"></div>
     <div id="aj-conexion" class="hidden"></div>
   </section>
@@ -120,6 +124,8 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="sync hidden" id="sync"></div>
+<script src="calculos.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
