@@ -142,3 +142,7 @@ h1{font-size:30px;margin:0;letter-spacing:-.5px}
 .pres-ant-sec{float:right;text-transform:none;letter-spacing:0;font-size:12px}
 /* Respuesta visual inmediata al tocar */
 .nav button:active,.sobre:active,.mov:active,.link:active,.chip:active{opacity:.6}
+
+/* Sumar / restar en Agregar (solo Ahorro e Ingreso) */
+.signo{margin-top:12px}
+.signo .chip[data-signo="-"].on{background:var(--err);color:#fff}

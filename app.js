@@ -23,7 +23,7 @@
   const fechaTxt = d => d.getFullYear() + '-' + dos(d.getMonth() + 1) + '-' + dos(d.getDate());
   const aFecha = s => new Date(Number(s.slice(0, 4)), Number(s.slice(5, 7)) - 1, Number(s.slice(8, 10)));   // local, no UTC
   const claseUso = pct => pct > 100 ? 'over' : pct >= 85 ? 'warn' : '';
-  const VERSION = '2026-11-14.3';
+  const VERSION = '2026-11-16.1';
   const nuevoId = () => 'c' + Math.random().toString(36).slice(2, 9).padEnd(7, '0');
 
   let toastT;
@@ -40,7 +40,7 @@
     datos: {},                         // { [anio]: {anio, categorias, movimientos, presupuestos, colchonDefault} } formato API
     cola: leerJSON('g_cola', []),      // cambios aún no enviados: [{accion, body}]
     sobreAbierto: null,
-    agregar: { tipo: 'gasto', seccion: '', categoria: '' },
+    agregar: { tipo: 'gasto', seccion: '', categoria: '', signo: '+' },
   };
 
   /* ───────── API ───────── */
@@ -352,19 +352,32 @@
   }
 
   /* ───────── Agregar ───────── */
+  // El monto se muestra con "-" cuando es un retiro (solo Ahorro e Ingreso pueden restar)
+  const formatoMonto = d => d ? (st.agregar.signo === '-' ? '-' : '') + pesos(d) : '';
   [1000, 2000, 5000, 10000, 20000].forEach(v => {
     const b = document.createElement('button'); b.textContent = '+' + pesos(v);
-    b.onclick = () => { $('aMonto').value = pesos(Number(digitos($('aMonto').value) || 0) + v); actualizarAgregar(); };
+    b.onclick = () => { $('aMonto').value = formatoMonto(Number(digitos($('aMonto').value) || 0) + v); actualizarAgregar(); };
     $('aRapidos').appendChild(b);
   });
-  $('aMonto').addEventListener('input', e => { const d = digitos(e.target.value); e.target.value = d ? pesos(d) : ''; actualizarAgregar(); });
+  $('aMonto').addEventListener('input', e => { e.target.value = formatoMonto(digitos(e.target.value)); actualizarAgregar(); });
   document.querySelectorAll('.chip-tipo').forEach(b => {
-    b.onclick = () => { st.agregar = { tipo: b.dataset.tipo, seccion: '', categoria: '' }; pintarAgregar(); };
+    b.onclick = () => { st.agregar = { tipo: b.dataset.tipo, seccion: '', categoria: '', signo: '+' }; $('aMonto').value = formatoMonto(digitos($('aMonto').value)); pintarAgregar(); };
   });
+  document.querySelectorAll('#aSigno .chip').forEach(b => {
+    b.onclick = () => { st.agregar.signo = b.dataset.signo; $('aMonto').value = formatoMonto(digitos($('aMonto').value)); pintarAgregar(); };
+  });
+  const ETIQ_SIGNO = { ahorro: ['+ Aporte', '− Retiro'], ingreso: ['+ Ingreso', '− Descuento'] };
 
   function pintarAgregar() {
     if (!$('aFecha').value || $('aFecha').dataset.auto) { $('aFecha').value = fechaTxt(new Date()); $('aFecha').dataset.auto = '1'; }
     document.querySelectorAll('.chip-tipo').forEach(b => b.classList.toggle('on', b.dataset.tipo === st.agregar.tipo));
+    const etiq = ETIQ_SIGNO[st.agregar.tipo];
+    $('aSigno').classList.toggle('hidden', !etiq);
+    if (!etiq) st.agregar.signo = '+';
+    document.querySelectorAll('#aSigno .chip').forEach((b, i) => {
+      if (etiq) b.textContent = etiq[i];
+      b.classList.toggle('on', b.dataset.signo === st.agregar.signo);
+    });
     const activas = catalogo().filter(c => c.activa && grupoDeTipo(c.tipo) === st.agregar.tipo);
     const secciones = seccionesDe(activas);
     if (secciones.indexOf(st.agregar.seccion) < 0) st.agregar.seccion = secciones[0] || '';
@@ -381,7 +394,8 @@
   function actualizarAgregar() {
     const ok = digitos($('aMonto').value) && st.agregar.categoria && $('aFecha').value;
     $('aGuardar').disabled = !ok;
-    $('aResumen').textContent = st.agregar.categoria ? nombreCat(st.agregar.categoria) + ' · ' + st.agregar.seccion : 'Elige una categoría';
+    const resta = st.agregar.signo === '-' ? ' · ' + (st.agregar.tipo === 'ahorro' ? 'Retiro' : 'Descuento') : '';
+    $('aResumen').textContent = st.agregar.categoria ? nombreCat(st.agregar.categoria) + ' · ' + st.agregar.seccion + resta : 'Elige una categoría';
   }
 
   $('aGuardar').onclick = () => {
@@ -391,8 +405,8 @@
     const fecha = $('aFecha').value;
     const anio = Number(fecha.slice(0, 4)), mes = Number(fecha.slice(5, 7));
     asegurarAnio(anio).then(() => {
-      cambiar('registrar', { id: nuevoId(), fecha: fecha, categoria_id: st.agregar.categoria, monto: monto, nota: $('aNota').value.trim() });
-      $('aMonto').value = ''; $('aNota').value = ''; st.agregar.categoria = '';
+      cambiar('registrar', { id: nuevoId(), fecha: fecha, categoria_id: st.agregar.categoria, monto: st.agregar.signo === '-' ? -monto : monto, nota: $('aNota').value.trim() });
+      $('aMonto').value = ''; $('aNota').value = ''; st.agregar.categoria = ''; st.agregar.signo = '+';
       st.anio = anio; st.mes = mes;
       const p = panelDe(anio, mes);
       toast('Guardado' + (p.sinPresupuesto ? '' : ' · te quedan ' + pesos(p.disponible)));

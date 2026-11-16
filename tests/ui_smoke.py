@@ -467,6 +467,46 @@ def presupuesto_enero_mira_diciembre_del_anio_anterior(b):
     assert pg.inner_text('.pres-ant[data-id="sup"]') == 'dic —', pg.inner_text('.pres-ant[data-id="sup"]')
     return pg
 
+# ───────── Retiros (montos negativos) en Agregar ─────────
+
+@prueba
+def agregar_retiro_de_ahorro_envia_monto_negativo(b):
+    pg = abrir(b)
+    nav(pg, 'agregar')
+    assert not pg.is_visible('#aSigno'), 'en Gasto no se ofrece restar'
+    pg.click('.chip-tipo:has-text("Ahorro")')
+    assert pg.is_visible('#aSigno')
+    pg.click('#aSigno [data-signo="-"]')
+    pg.fill('#aMonto', '15000')
+    assert pg.input_value('#aMonto') == '-$15.000', pg.input_value('#aMonto')
+    pg.click('#aCategorias .chip:has-text("Fondo")')
+    assert 'Retiro' in pg.inner_text('#aResumen'), pg.inner_text('#aResumen')
+    pg.screenshot(path=os.path.join(CAPT, 'retiro.png'))
+    pg.click('#aGuardar'); pg.wait_for_timeout(300)
+    r = posts(pg, 'registrar')
+    assert len(r) == 1 and r[0]['monto'] == -15000 and r[0]['categoria_id'] == 'fin', r
+    return pg
+
+@prueba
+def agregar_signo_vuelve_a_sumar_al_cambiar_de_tipo(b):
+    pg = abrir(b)
+    nav(pg, 'agregar')
+    pg.click('.chip-tipo:has-text("Ahorro")'); pg.click('#aSigno [data-signo="-"]')
+    pg.click('.chip-tipo:has-text("Gasto")')
+    assert not pg.is_visible('#aSigno')
+    pg.fill('#aMonto', '5000')
+    assert pg.input_value('#aMonto') == '$5.000', pg.input_value('#aMonto')
+    pg.click('.chip-tipo:has-text("Ahorro")')
+    assert pg.get_attribute('#aSigno [data-signo="+"]', 'class').find('on') > -1
+    return pg
+
+@prueba
+def ajustes_version_actual(b):
+    pg = abrir(b)
+    nav(pg, 'ajustes')
+    assert pg.inner_text('#version') == 'Versión 2026-11-16.1', pg.inner_text('#version')
+    return pg
+
 def main():
     filtro = sys.argv[1] if len(sys.argv) > 1 else ''
     fallas = 0
